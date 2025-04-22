@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    此文件已被替换为main-layout.fxml和user-management-content.fxml。
+    保留此文件仅作为参考，项目中不再使用此文件。
+-->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Pagination?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<StackPane fx:id="rootPane" styleClass="glass-pane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.redbook.tool.ui.controller.UserManagementController">
+   <children>
+      <VBox alignment="CENTER" spacing="15">
+         <padding>
+            <Insets bottom="20" left="20" right="20" top="20" />
+         </padding>
+         
+         <!-- 头部区域 -->
+         <HBox alignment="CENTER_LEFT" spacing="10">
+            <children>
+               <VBox>
+                  <children>
+                     <Text styleClass="title-text" text="用户管理">
+                        <font>
+                           <Font name="System Bold" size="24.0" />
+                        </font>
+                     </Text>
+                     <Text styleClass="subtitle-text" text="管理小红书账号，刷新登录状态">
+                        <font>
+                           <Font name="System Italic" size="14.0" />
+                        </font>
+                     </Text>
+                  </children>
+               </VBox>
+               <Region HBox.hgrow="ALWAYS" />
+               <Button fx:id="refreshButton" onAction="#onRefreshUserList" styleClass="btn-secondary" text="刷新列表" />
+               <Button fx:id="loginNewAccountButton" onAction="#onLoginNewAccount" styleClass="btn-primary" text="登录新账号" />
+            </children>
+         </HBox>
+         
+         <!-- 表格区域 -->
+         <TableView fx:id="userTableView" styleClass="custom-table" VBox.vgrow="ALWAYS">
+            <columns>
+               <TableColumn fx:id="nicknameColumn" prefWidth="120.0" text="昵称" />
+               <TableColumn fx:id="redIdColumn" prefWidth="120.0" text="小红书ID" />
+               <TableColumn fx:id="statusColumn" prefWidth="80.0" text="状态" />
+               <TableColumn fx:id="lastLoginColumn" prefWidth="180.0" text="最后登录时间" />
+               <TableColumn fx:id="userIdColumn" prefWidth="150.0" text="用户ID" visible="false" />
+               <TableColumn fx:id="actionsColumn" prefWidth="150.0" text="操作" />
+            </columns>
+            <placeholder>
+               <Label text="暂无用户数据" />
+            </placeholder>
+         </TableView>
+         
+         <!-- 分页控件 -->
+         <Pagination fx:id="pagination" maxPageIndicatorCount="5" styleClass="custom-pagination" />
+         
+         <!-- 空状态提示 -->
+         <VBox fx:id="emptyStateBox" alignment="CENTER" spacing="15" visible="false">
+            <children>
+               <Text styleClass="empty-text" text="没有找到用户信息">
+                  <font>
+                     <Font name="System Bold" size="18.0" />
+                  </font>
+               </Text>
+               <Text styleClass="hint-text" text="请点击登录新账号按钮添加小红书账号">
+                  <font>
+                     <Font size="14.0" />
+                  </font>
+               </Text>
+               <Button onAction="#onLoginNewAccount" styleClass="btn-primary" text="登录新账号" />
+            </children>
+         </VBox>
+         
+         <!-- 加载指示器 -->
+         <StackPane fx:id="loadingPane" visible="false">
+            <children>
+               <ProgressIndicator fx:id="loadingIndicator" progress="-1.0" />
+            </children>
+         </StackPane>
+      </VBox>
+   </children>
+</StackPane> 

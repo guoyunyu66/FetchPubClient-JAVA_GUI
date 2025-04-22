@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Separator?>
+
+<VBox fx:id="contentRoot" alignment="CENTER" spacing="15" styleClass="content-panel" 
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.redbook.tool.ui.controller.NotePublishController">
+   <padding>
+      <Insets bottom="20" left="20" right="20" top="15" />
+   </padding>
+   
+   <!-- 头部区域 -->
+   <HBox alignment="CENTER_LEFT" spacing="15">
+      <children>
+         <HBox alignment="CENTER" spacing="10">
+            <FontIcon iconLiteral="fas-paper-plane" iconSize="36" styleClass="title-icon" />
+         </HBox>
+         <VBox>
+            <children>
+               <Text styleClass="title-text" text="一键发布">
+                  <font>
+                     <Font name="System Bold" size="22.0" />
+                  </font>
+               </Text>
+               <Text styleClass="subtitle-text" text="编辑并发布小红书笔记">
+                  <font>
+                     <Font name="System Italic" size="13.0" />
+                  </font>
+               </Text>
+            </children>
+         </VBox>
+         <Region HBox.hgrow="ALWAYS" />
+         <Button fx:id="refreshButton" onAction="#onBackToArticleCrawl" styleClass="btn-secondary" text="返回文章爬取">
+            <graphic>
+               <FontIcon iconLiteral="fas-arrow-left" />
+            </graphic>
+         </Button>
+         <Button fx:id="publishButton" onAction="#onPublish" styleClass="gradient-button" text="发布笔记">
+            <graphic>
+               <FontIcon iconLiteral="fas-paper-plane" />
+            </graphic>
+         </Button>
+      </children>
+   </HBox>
+   
+   <!-- 用户选择区域 -->
+   <HBox alignment="CENTER_LEFT" spacing="10" styleClass="modern-card">
+      <padding>
+         <Insets bottom="10" left="15" right="15" top="10" />
+      </padding>
+      <children>
+         <Label text="选择发布账号:" styleClass="form-label">
+            <font>
+               <Font name="System Bold" size="14.0" />
+            </font>
+         </Label>
+         <ComboBox fx:id="userComboBox" prefWidth="250" />
+         <Region HBox.hgrow="ALWAYS" />
+         <ProgressBar fx:id="publishProgressBar" prefWidth="200" progress="0" visible="false" />
+      </children>
+   </HBox>
+   
+   <!-- 内容编辑区域 -->
+   <BorderPane VBox.vgrow="ALWAYS">
+      <center>
+         <ScrollPane fitToWidth="true" styleClass="transparent-scroll-pane" BorderPane.alignment="CENTER">
+            <content>
+               <VBox spacing="15" styleClass="modern-card">
+                  <padding>
+                     <Insets bottom="20" left="20" right="20" top="20" />
+                  </padding>
+                  
+                  <!-- 标题编辑 -->
+                  <VBox spacing="5">
+                     <Label text="标题" styleClass="form-label">
+                        <font>
+                           <Font name="System Bold" size="14.0" />
+                        </font>
+                     </Label>
+                     <TextField fx:id="titleField" promptText="请输入笔记标题" styleClass="form-input" />
+                  </VBox>
+                  
+                  <!-- 内容编辑 -->
+                  <VBox spacing="5" VBox.vgrow="ALWAYS">
+                     <Label text="内容" styleClass="form-label">
+                        <font>
+                           <Font name="System Bold" size="14.0" />
+                        </font>
+                     </Label>
+                     <TextArea fx:id="contentArea" minHeight="200" prefHeight="200" 
+                               promptText="请输入笔记内容" styleClass="form-input" wrapText="true" VBox.vgrow="ALWAYS" />
+                  </VBox>
+                  
+                  <!-- 标签编辑 -->
+                  <VBox spacing="5">
+                     <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="标签" styleClass="form-label">
+                           <font>
+                              <Font name="System Bold" size="14.0" />
+                           </font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button fx:id="addTagButton" onAction="#onAddTag" styleClass="btn-secondary" text="添加标签">
+                           <graphic>
+                              <FontIcon iconLiteral="fas-plus" />
+                           </graphic>
+                        </Button>
+                     </HBox>
+                     <FlowPane fx:id="tagsContainer" hgap="10" vgap="10" />
+                  </VBox>
+                  
+                  <!-- 图片展示 -->
+                  <VBox spacing="5">
+                     <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="图片" styleClass="form-label">
+                           <font>
+                              <Font name="System Bold" size="14.0" />
+                           </font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="imageCountLabel" text="共0张图片" />
+                     </HBox>
+                     <FlowPane fx:id="imagesContainer" hgap="10" vgap="10" />
+                  </VBox>
+                  
+                  <!-- 日志区域 -->
+                  <VBox spacing="5">
+                     <Separator />
+                     <Label text="发布日志" styleClass="form-label">
+                        <font>
+                           <Font name="System Bold" size="14.0" />
+                        </font>
+                     </Label>
+                     <TextArea fx:id="logTextArea" editable="false" minHeight="100" prefHeight="150" 
+                               promptText="发布日志会显示在这里" styleClass="log-area" wrapText="true" />
+                  </VBox>
+               </VBox>
+            </content>
+         </ScrollPane>
+      </center>
+   </BorderPane>
+</VBox>

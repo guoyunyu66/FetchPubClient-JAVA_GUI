@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.scene.control.Pagination?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.layout.BorderPane?>
+
+<VBox fx:id="contentRoot" alignment="CENTER" spacing="15" styleClass="content-panel" 
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.redbook.tool.ui.controller.ArticleCrawlController">
+   <padding>
+      <Insets bottom="20" left="20" right="20" top="15" />
+   </padding>
+   
+   <!-- 头部区域 -->
+   <HBox alignment="CENTER_LEFT" spacing="15">
+      <children>
+         <HBox alignment="CENTER" spacing="10">
+            <FontIcon iconLiteral="fas-file-alt" iconSize="36" styleClass="title-icon" />
+         </HBox>
+         <VBox>
+            <children>
+               <Text styleClass="title-text" text="文章爬取">
+                  <font>
+                     <Font name="System Bold" size="22.0" />
+                  </font>
+               </Text>
+               <Text styleClass="subtitle-text" text="输入关键词搜索小红书文章">
+                  <font>
+                     <Font name="System Italic" size="13.0" />
+                  </font>
+               </Text>
+            </children>
+         </VBox>
+         <Region HBox.hgrow="ALWAYS" />
+         <Button fx:id="refreshButton" onAction="#onRefreshUserList" styleClass="btn-secondary" text="刷新账号">
+            <graphic>
+               <FontIcon iconLiteral="fas-sync-alt" />
+            </graphic>
+         </Button>
+         <Button onAction="#onBackToUserManagement" styleClass="btn-secondary" text="返回用户管理">
+            <graphic>
+               <FontIcon iconLiteral="fas-arrow-left" />
+            </graphic>
+         </Button>
+      </children>
+   </HBox>
+   
+   <!-- 搜索区域 -->
+   <HBox fx:id="searchContainer" alignment="CENTER_LEFT" spacing="15" styleClass="search-container">
+      <children>
+         <Label text="选择账号:" />
+         <ComboBox fx:id="userComboBox" prefWidth="250.0" promptText="请选择一个账号" />
+         <Label text="关键词:" />
+         <TextField fx:id="keywordTextField" prefWidth="250.0" promptText="输入搜索关键词" />
+         <Button fx:id="searchButton" onAction="#onSearch" styleClass="gradient-button" text="搜索">
+            <graphic>
+               <FontIcon iconLiteral="fas-search" />
+            </graphic>
+         </Button>
+      </children>
+      <padding>
+         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+      </padding>
+   </HBox>
+   
+   <!-- 添加日志显示区域，设置固定高度 -->
+   <TextArea fx:id="logTextArea" editable="false" wrapText="true" maxHeight="100" minHeight="100" prefHeight="100" VBox.vgrow="NEVER" styleClass="log-area" />
+   
+   <!-- 使用BorderPane布局彻底分离上下部分 -->
+   <BorderPane VBox.vgrow="ALWAYS">
+       <!-- 顶部：笔记标题和操作区域 -->
+       <top>
+           <HBox alignment="CENTER_LEFT" spacing="10">
+               <children>
+                   <Label text="笔记列表" styleClass="results-title">
+                       <font>
+                           <Font name="System Bold" size="14.0" />
+                       </font>
+                   </Label>
+                   <Region HBox.hgrow="ALWAYS" />
+                   <ProgressBar fx:id="searchProgressBar" prefWidth="200.0" visible="false" />
+                   <ProgressIndicator fx:id="searchProgressIndicator" maxHeight="30" maxWidth="30" prefHeight="30.0" prefWidth="30.0" progress="-1.0" visible="false" />
+                   <Button onAction="#onClearResults" styleClass="btn-secondary" text="清空结果">
+                       <graphic>
+                           <FontIcon iconLiteral="fas-trash-alt" />
+                       </graphic>
+                   </Button>
+               </children>
+               <padding>
+                   <Insets bottom="5" />
+               </padding>
+           </HBox>
+       </top>
+       
+       <!-- 中间：表格区域，固定高度 -->
+       <center>
+           <VBox minHeight="300" prefHeight="300" BorderPane.alignment="CENTER" 
+                 style="-fx-min-height: 300px; -fx-pref-height: 300px;">
+               <TableView fx:id="notesTableView" 
+                          minHeight="300" prefHeight="300" VBox.vgrow="ALWAYS" 
+                          style="-fx-min-height: 300px; -fx-pref-height: 300px; -fx-fixed-cell-size: 40px;" 
+                          styleClass="table-view" />
+           </VBox>
+       </center>
+       
+       <!-- 底部：分页控件，固定高度 -->
+       <bottom>
+           <VBox alignment="CENTER" minHeight="50" prefHeight="50" BorderPane.alignment="CENTER" 
+                 style="-fx-min-height: 50px; -fx-pref-height: 50px;">
+               <Pagination fx:id="pagination" maxPageIndicatorCount="5" styleClass="custom-pagination"
+                          minHeight="50" prefHeight="50" />
+           </VBox>
+       </bottom>
+   </BorderPane>
+</VBox> 

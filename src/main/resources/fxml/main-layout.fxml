@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane fx:id="mainContainer" prefHeight="700.0" prefWidth="1000.0" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.redbook.tool.ui.controller.MainController">
+   <left>
+      <!-- 侧边栏导航 -->
+      <VBox fx:id="sidebarMenu" styleClass="sidebar-menu" BorderPane.alignment="CENTER">
+         <children>
+            <!-- 应用标题 -->
+            <HBox alignment="CENTER_LEFT" prefHeight="60.0" styleClass="app-title-bar">
+               <padding>
+                  <Insets left="20.0" right="20.0" />
+               </padding>
+               <children>
+                  <FontIcon iconLiteral="fas-stream" iconSize="20" styleClass="app-logo" />
+                  <Label styleClass="app-title" text="小红书工具">
+                     <font>
+                        <Font name="System Bold" size="18.0" />
+                     </font>
+                  </Label>
+               </children>
+            </HBox>
+            
+            <VBox fx:id="menuItemsContainer" spacing="5.0" VBox.vgrow="ALWAYS">
+               <padding>
+                  <Insets left="0" right="0" top="10.0" />
+               </padding>
+               <children>
+                  <!-- 用户管理菜单项 -->
+                  <Button fx:id="userManagementBtn" alignment="BASELINE_LEFT" graphicTextGap="12.0" mnemonicParsing="false" onAction="#onSwitchToUserManagement" prefHeight="44.0" styleClass="menu-button, active-menu-item" text="用户管理">
+                     <graphic>
+                        <FontIcon iconLiteral="fas-user" />
+                     </graphic>
+                     <padding>
+                        <Insets left="20.0" />
+                     </padding>
+                  </Button>
+                  
+                  <!-- 文章爬取菜单项 -->
+                  <Button fx:id="articleCrawlBtn" alignment="BASELINE_LEFT" graphicTextGap="12.0" mnemonicParsing="false" onAction="#onSwitchToArticleCrawl" prefHeight="44.0" styleClass="menu-button" text="文章爬取">
+                     <graphic>
+                        <FontIcon iconLiteral="fas-file-alt" />
+                     </graphic>
+                     <padding>
+                        <Insets left="20.0" />
+                     </padding>
+                  </Button>
+                  
+                  <!-- 一键发布菜单项 -->
+                  <Button fx:id="publishBtn" alignment="BASELINE_LEFT" graphicTextGap="12.0" mnemonicParsing="false" onAction="#onSwitchToPublish" prefHeight="44.0" styleClass="menu-button" text="一键发布">
+                     <graphic>
+                        <FontIcon iconLiteral="fas-paper-plane" />
+                     </graphic>
+                     <padding>
+                        <Insets left="20.0" />
+                     </padding>
+                  </Button>
+               </children>
+            </VBox>
+            
+            <!-- 底部版本信息 -->
+            <HBox alignment="CENTER" prefHeight="40.0" styleClass="version-info">
+               <children>
+                  <Label text="v1.0.0" textFill="#e0e0e0" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </left>
+   <center>
+      <!-- 内容区域 -->
+      <StackPane fx:id="contentArea" styleClass="content-area" BorderPane.alignment="CENTER">
+         <children>
+            <!-- 用户管理内容 -->
+            <ScrollPane fx:id="userManagementView" fitToHeight="true" fitToWidth="true" styleClass="transparent-scroll-pane" visible="true">
+               <content>
+                  <fx:include source="user-management-content.fxml" />
+               </content>
+            </ScrollPane>
+            
+            <!-- 文章爬取内容 -->
+            <ScrollPane fx:id="articleCrawlView" fitToHeight="true" fitToWidth="true" styleClass="transparent-scroll-pane" hbarPolicy="NEVER" vbarPolicy="NEVER" visible="false">
+               <content>
+                  <fx:include source="article-crawl-content.fxml" />
+               </content>
+            </ScrollPane>
+            
+            <!-- 一键发布内容 -->
+            <ScrollPane fx:id="publishView" fitToHeight="true" fitToWidth="true" styleClass="transparent-scroll-pane" visible="false">
+               <content>
+                  <fx:include source="note-publish-content.fxml" />
+               </content>
+            </ScrollPane>
+         </children>
+         <padding>
+            <Insets bottom="0" left="0" right="0" top="0" />
+         </padding>
+      </StackPane>
+   </center>
+</BorderPane> 

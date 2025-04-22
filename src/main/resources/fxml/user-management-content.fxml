@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Pagination?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox fx:id="contentRoot" alignment="CENTER" spacing="20" styleClass="content-panel" 
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.redbook.tool.ui.controller.UserManagementController">
+   <padding>
+      <Insets bottom="20" left="20" right="20" top="15" />
+   </padding>
+   
+   <!-- 头部区域 -->
+   <HBox alignment="CENTER_LEFT" spacing="15">
+      <children>
+         <HBox alignment="CENTER" spacing="10">
+            <FontIcon iconLiteral="fas-user-circle" iconSize="36" styleClass="title-icon" />
+         </HBox>
+         <VBox>
+            <children>
+               <Text styleClass="title-text" text="用户管理">
+                  <font>
+                     <Font name="System Bold" size="22.0" />
+                  </font>
+               </Text>
+               <Text styleClass="subtitle-text" text="管理小红书账号，刷新登录状态">
+                  <font>
+                     <Font name="System Italic" size="13.0" />
+                  </font>
+               </Text>
+            </children>
+         </VBox>
+         <Region HBox.hgrow="ALWAYS" />
+         <Button fx:id="refreshButton" onAction="#onRefreshUserList" styleClass="btn-secondary" text="刷新列表">
+            <graphic>
+               <FontIcon iconLiteral="fas-sync-alt" />
+            </graphic>
+         </Button>
+         <Button fx:id="loginNewAccountButton" onAction="#onLoginNewAccount" styleClass="gradient-button" text="登录新账号">
+            <graphic>
+               <FontIcon iconLiteral="fas-sign-in-alt" />
+            </graphic>
+         </Button>
+      </children>
+   </HBox>
+   
+   <!-- 表格区域 -->
+   <TableView fx:id="userTableView" styleClass="custom-table" VBox.vgrow="ALWAYS">
+      <columns>
+         <TableColumn fx:id="nicknameColumn" prefWidth="220.0" text="昵称" />
+         <TableColumn fx:id="redIdColumn" prefWidth="170.0" text="小红书ID" />
+         <TableColumn fx:id="statusColumn" prefWidth="60.0" text="状态" />
+         <TableColumn fx:id="lastLoginColumn" prefWidth="180.0" text="最后登录时间" />
+         <TableColumn fx:id="userIdColumn" prefWidth="150.0" text="用户ID" visible="false" />
+         <TableColumn fx:id="actionsColumn" prefWidth="170.0" text="操作" styleClass="action-column" />
+      </columns>
+      <placeholder>
+         <Label text="暂无用户数据" />
+      </placeholder>
+      <columnResizePolicy>
+         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+      </columnResizePolicy>
+   </TableView>
+   
+   <!-- 分页控件 -->
+   <Pagination fx:id="pagination" maxPageIndicatorCount="5" styleClass="custom-pagination" />
+   
+   <!-- 空状态提示 -->
+   <VBox fx:id="emptyStateBox" alignment="CENTER" spacing="20" visible="false">
+      <children>
+         <FontIcon iconLiteral="fas-user-slash" iconSize="60" styleClass="dev-icon" />
+         <Text styleClass="empty-text" text="没有找到用户信息">
+            <font>
+               <Font name="System Bold" size="20.0" />
+            </font>
+         </Text>
+         <Text styleClass="hint-text" text="请点击登录新账号按钮添加小红书账号">
+            <font>
+               <Font size="16.0" />
+            </font>
+         </Text>
+         <Button onAction="#onLoginNewAccount" styleClass="gradient-button" text="登录新账号">
+            <graphic>
+               <FontIcon iconLiteral="fas-sign-in-alt" />
+            </graphic>
+            <VBox.margin>
+               <Insets top="10.0" />
+            </VBox.margin>
+         </Button>
+      </children>
+   </VBox>
+   
+   <!-- 加载指示器 -->
+   <StackPane fx:id="loadingPane" visible="false">
+      <children>
+         <ProgressIndicator fx:id="loadingIndicator" prefHeight="80.0" prefWidth="80.0" progress="-1.0" />
+      </children>
+   </StackPane>
+</VBox> 
