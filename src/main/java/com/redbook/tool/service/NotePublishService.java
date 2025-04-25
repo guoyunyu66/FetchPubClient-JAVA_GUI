@@ -22,16 +22,16 @@ import org.springframework.stereotype.Service;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.ElementHandle;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.LoadState;
 import com.redbook.tool.dto.PublishResultDTO;
 import com.redbook.tool.entity.NoteInfo;
 import com.redbook.tool.entity.UserInfo;
-import com.redbook.tool.manager.BrowserManager;
-import com.redbook.tool.manager.BrowserManager.BrowserEnum;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
@@ -67,12 +67,10 @@ public class NotePublishService {
     // 临时文件目录
     private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
     
-    private final BrowserManager browserManager;
     private final UserService userService;
     
     @Autowired
-    public NotePublishService(BrowserManager browserManager, UserService userService) {
-        this.browserManager = browserManager;
+    public NotePublishService(UserService userService) {
         this.userService = userService;
     }
     
@@ -114,18 +112,27 @@ public class NotePublishService {
             
             progressCallback.accept(20, 100);
             
-            // 使用Playwright发布笔记
-            BrowserContext context = null;
-            Page page = null;
-            
             try {
+                // 使用try-with-resources确保资源正确关闭
+                try (Playwright playwright = Playwright.create()) {
+                    // 创建浏览器实例 - 使用Chromium
+                    BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
+                            .setHeadless(true)  // 非无头模式，可以看到界面
+                            .setSlowMo(100);     // 减缓操作速度，便于观察
+                    
+                    try (Browser browser = playwright.chromium().launch(launchOptions)) {
                 // 创建浏览器上下文
-                context = browserManager.getBrowserContext(BrowserEnum.CHROMIUM);
-                
+                        try (BrowserContext context = browser.newContext()) {
                 // 恢复用户的cookies
                 log.info("cookies是{}", userInfo.getCookies());
                 context.addCookies(userInfo.getCookies());
-                page = browserManager.newPage(context, XIAO_HONG_SHU_URL);
+                            
+                            // 创建新页面
+                            Page page = context.newPage();
+                            
+                            // 先访问小红书主页
+                            page.navigate(XIAO_HONG_SHU_URL);
+                            page.waitForLoadState(LoadState.DOMCONTENTLOADED);
 
                 // 打开发布页面
                 page.navigate(PUBLISH_URL);
@@ -189,7 +196,9 @@ public class NotePublishService {
                 String noteUrl = extractNoteUrl(page);
                 
                 return PublishResultDTO.success(noteId, noteUrl);
-                
+                        }
+                    }
+                }
             } catch (Exception e) {
                 log.error("发布笔记失败", e);
                 logCallback.accept("发布笔记失败: " + e.getMessage());
@@ -197,14 +206,6 @@ public class NotePublishService {
             } finally {
                 // 清理临时文件
                 cleanupTempFiles(localImagePaths);
-                
-                // 关闭浏览器
-                if (page != null) {
-                    browserManager.closePage(page);
-                }
-                if (context != null) {
-                    browserManager.closeContext(context);
-                }
             }
         });
     }
@@ -420,30 +421,6 @@ public class NotePublishService {
             log.error("提取笔记URL失败", e);
             return null;
         }
-    }
-    
-    /**
-     * 将cookie字符串解析为Playwright的Cookie对象列表
-     */
-    private List<com.microsoft.playwright.options.Cookie> parseCookiesString(List<Cookie> cookiesString) {
-        List<com.microsoft.playwright.options.Cookie> cookies = new ArrayList<>();
-        
-        // 这里需要根据你的cookie格式进行解析
-        // 简单示例：假设cookiesString是JSON格式，需要适当修改
-        try {
-            // 假设cookiesString已是正确格式，直接创建样例cookie
-            com.microsoft.playwright.options.Cookie cookie = new com.microsoft.playwright.options.Cookie("session", "value");
-            cookie.setDomain("xiaohongshu.com");
-            cookie.setPath("/");
-            cookies.add(cookie);
-            
-            // TODO: 实现实际的cookie解析逻辑
-            
-        } catch (Exception e) {
-            log.error("解析cookies失败", e);
-        }
-        
-        return cookies;
     }
     
     /**

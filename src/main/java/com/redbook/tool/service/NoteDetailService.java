@@ -9,16 +9,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.stereotype.Service;
 
+import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.ElementHandle;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import com.redbook.tool.dto.NoteDetailDTO;
 import com.redbook.tool.entity.NoteInfo;
 import com.redbook.tool.entity.UserInfo;
-import com.redbook.tool.manager.BrowserManager;
 import com.redbook.tool.service.ArticleCrawlService.LogCallback;
 import com.redbook.tool.service.ArticleCrawlService.ProgressCallback;
 import com.redbook.tool.service.ArticleCrawlService.SearchResult;
@@ -52,7 +54,6 @@ public class NoteDetailService {
     private static final String NOTE_IMAGE_CONTAINER_SELECTOR = "div.swiper-slide";
     private static final String NOTE_IMAGE_SELECTOR = "img.note-slider-img";
     
-    private final BrowserManager browserManager;
     private final UserService userService;
     
     /**
@@ -79,9 +80,6 @@ public class NoteDetailService {
         }
         
         return CompletableFuture.supplyAsync(() -> {
-            BrowserContext context = null;
-            Page page = null;
-            
             // 用于标记是否是用户主动关闭浏览器
             AtomicBoolean browserClosedByUser = new AtomicBoolean(false);
             
@@ -105,8 +103,17 @@ public class NoteDetailService {
                     progressCallback.onProgress(0, 100, "初始化浏览器...");
                 }
                 
-                // 创建浏览器上下文并添加cookies
-                context = browserManager.getBrowserContext(BrowserManager.BrowserEnum.CHROMIUM);
+                // 使用try-with-resources确保资源正确关闭
+                try (Playwright playwright = Playwright.create()) {
+                    // 创建浏览器实例 - 使用Chromium
+                    BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
+                            .setHeadless(true)  // 非无头模式，可以看到界面
+                            .setSlowMo(100);     // 减缓操作速度，便于观察
+                    
+                    try (Browser browser = playwright.chromium().launch(launchOptions)) {
+                        // 创建浏览器上下文
+                        try (BrowserContext context = browser.newContext()) {
+                            // 添加用户的cookies
                 context.addCookies(user.getCookies());
                 
                 if (logCallback != null) {
@@ -118,18 +125,13 @@ public class NoteDetailService {
                 }
                 
                 // 创建页面对象并导航到笔记URL
-                page = context.newPage();
+                            Page page = context.newPage();
                 
                 // 添加页面关闭事件监听器
-                Page finalPage = page;
-                BrowserContext finalContext = context;
                 page.onClose(p -> {
                     log.info("浏览器页面被关闭");
-                    // 检查是否是由系统关闭的
-                    if (!browserManager.isClosingBySystem()) {
                         log.info("检测到页面被用户手动关闭");
                         browserClosedByUser.set(true);
-                    }
                 });
                 
                 // 导航到笔记详情页
@@ -170,14 +172,6 @@ public class NoteDetailService {
                     }
                     // 标记用户登录状态为失效
                     userService.markUserLoginExpired(userId);
-                    
-                    // 关闭浏览器
-                    try {
-                        browserManager.closePage(page);
-                        browserManager.closeContext(context);
-                    } catch (Exception ex) {
-                        log.error("关闭浏览器时发生错误: {}", ex.getMessage());
-                    }
                     
                     return NoteDetailDTO.failed(userId, noteUrl, SearchResult.LOGIN_EXPIRED);
                 }
@@ -224,20 +218,14 @@ public class NoteDetailService {
                     logCallback.log("笔记详情爬取完成: " + noteDetail.getTitle());
                 }
                 
-                // 关闭浏览器
-                try {
-                    browserManager.closePage(page);
-                    browserManager.closeContext(context);
-                } catch (Exception e) {
-                    log.error("关闭浏览器时发生错误: {}", e.getMessage());
-                }
-                
                 if (progressCallback != null) {
                     progressCallback.onProgress(100, 100, "爬取完成!");
                 }
                 
                 return NoteDetailDTO.success(userId, noteUrl, noteDetail);
-                
+                        }
+                    }
+                }
             } catch (PlaywrightException e) {
                 // 检查是否是浏览器被手动关闭的异常
                 if (e.getMessage().contains("Target page, context or browser has been closed")) {
@@ -264,14 +252,6 @@ public class NoteDetailService {
                     logCallback.log("爬取过程中发生错误: " + e.getMessage());
                 }
                 return NoteDetailDTO.failed(userId, noteUrl, SearchResult.FAILED);
-            } finally {
-                // 确保资源被释放
-                if (page != null && !page.isClosed()) {
-                    browserManager.closePage(page);
-                }
-                if (context != null) {
-                    browserManager.closeContext(context);
-                }
             }
         });
     }

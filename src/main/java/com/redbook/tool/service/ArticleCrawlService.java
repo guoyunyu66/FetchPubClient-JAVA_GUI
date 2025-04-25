@@ -11,15 +11,17 @@ import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
+import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.ElementHandle;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.LoadState;
 import com.redbook.tool.dto.SearchResultDTO;
 import com.redbook.tool.entity.NoteInfo;
 import com.redbook.tool.entity.UserInfo;
-import com.redbook.tool.manager.BrowserManager;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +47,6 @@ public class ArticleCrawlService {
     // 检查超时设置
     private static final int LOGIN_CHECK_TIMEOUT = 10000; // 总超时时间10秒
     
-    private final BrowserManager browserManager;
     private final UserService userService;
     
     // 定义搜索结果状态
@@ -146,9 +147,6 @@ public class ArticleCrawlService {
         }
         
         return CompletableFuture.supplyAsync(() -> {
-            BrowserContext context = null;
-            Page page = null;
-            
             // 用于标记是否是用户主动关闭浏览器
             AtomicBoolean browserClosedByUser = new AtomicBoolean(false);
             
@@ -172,8 +170,17 @@ public class ArticleCrawlService {
                     progressCallback.onProgress(0, 100, "初始化浏览器...");
                 }
                 
-                // 创建浏览器上下文并添加cookies
-                context = browserManager.getBrowserContext(BrowserManager.BrowserEnum.CHROMIUM);
+                // 使用try-with-resources确保资源正确关闭
+                try (Playwright playwright = Playwright.create()) {
+                    // 创建浏览器实例 - 使用Chromium
+                    BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
+                            .setHeadless(true)  // 非无头模式，可以看到界面
+                            .setSlowMo(100);     // 减缓操作速度，便于观察
+                    
+                    try (Browser browser = playwright.chromium().launch(launchOptions)) {
+                        // 创建浏览器上下文
+                        try (BrowserContext context = browser.newContext()) {
+                            // 添加用户的cookies
                 context.addCookies(user.getCookies());
                 
                 if (logCallback != null) {
@@ -193,24 +200,25 @@ public class ArticleCrawlService {
                 if (logCallback != null) {
                     logCallback.log("正在导航到搜索页面: " + searchUrl);
                 }
-                page = browserManager.newPage(context, searchUrl);
+                            
+                            // 创建新页面并导航到URL
+                            Page page = context.newPage();
                 
                 // 设置页面关闭事件监听器
-                final Page finalPage = page;
-                finalPage.onClose(p -> {
+                            page.onClose(p -> {
                     log.info("检测到页面关闭");
-                    // 仅当程序未主动关闭页面时才视为用户手动关闭
-                    if (!browserManager.isClosingBySystem()) {
+                                // 页面被关闭但不是由我们的代码关闭的，视为用户手动关闭
                         log.info("页面被用户手动关闭");
                         if (logCallback != null) {
                             logCallback.log("页面被用户手动关闭，搜索已中断");
                         }
                         browserClosedByUser.set(true);
-                    }
                 });
                 
-                // 等待页面加载完成
-                finalPage.waitForLoadState(LoadState.DOMCONTENTLOADED);
+                            // 导航到URL并等待加载
+                            page.navigate(searchUrl);
+                            page.waitForLoadState(LoadState.DOMCONTENTLOADED);
+                            
                 log.info("搜索页面加载完成");
                 if (logCallback != null) {
                     logCallback.log("搜索页面加载完成");
@@ -220,12 +228,13 @@ public class ArticleCrawlService {
                     progressCallback.onProgress(20, 100, "检查登录状态...");
                 }
                 
-                // 检查登录状态 - 使用单线程串行检查，而非多线程并行检查
+                            // 检查登录状态
                 log.info("开始检查登录状态...");
                 if (logCallback != null) {
                     logCallback.log("正在检查登录状态...");
                 }
-                Boolean isLoginExpired = checkLoginStatus(finalPage, userId);
+                            
+                            Boolean isLoginExpired = checkLoginStatus(page, userId);
                 
                 // 如果无法确定状态，默认认为登录有效
                 if (isLoginExpired == null) {
@@ -260,9 +269,9 @@ public class ArticleCrawlService {
                 AtomicInteger noteCounter = new AtomicInteger(0);
                 
                 // 爬取前估计结果数量（用于进度计算）
-                final int estimatedTotal = estimateResultCount(finalPage);
+                            final int estimatedTotal = estimateResultCount(page);
                 
-                List<NoteInfo> noteList = crawlSearchResults(finalPage, note -> {
+                            List<NoteInfo> noteList = crawlSearchResults(page, note -> {
                     // 每当获取到一条笔记时，更新计数器和进度
                     int count = noteCounter.incrementAndGet();
                     
@@ -299,7 +308,7 @@ public class ArticleCrawlService {
                 
                 // 预留一些时间查看页面状态
                 try {
-                    finalPage.waitForTimeout(2000);
+                                page.waitForTimeout(2000);
                 } catch (PlaywrightException e) {
                     if (e.getMessage().contains("Target page, context or browser has been closed")) {
                         log.info("浏览器在等待期间被关闭");
@@ -311,6 +320,9 @@ public class ArticleCrawlService {
                 }
                 
                 return SearchResultDTO.success(userId, keyword, noteList);
+                        }
+                    }
+                }
             } catch (PlaywrightException e) {
                 // 检查是否是浏览器被手动关闭的异常
                 if (e.getMessage().contains("Target page, context or browser has been closed")) {
@@ -337,19 +349,6 @@ public class ArticleCrawlService {
                     logCallback.log("执行搜索过程中发生错误: " + e.getMessage());
                 }
                 return SearchResultDTO.failed(userId, keyword, SearchResult.FAILED);
-            } finally {
-                // 关闭浏览器，如果没有被手动关闭的话
-                if (!browserClosedByUser.get()) {
-                    if (page != null) {
-                        browserManager.closePage(page);
-                    } else if (context != null) {
-                        browserManager.closeContext(context);
-                    }
-                    log.info("浏览器已关闭");    
-                    if (logCallback != null) {
-                        logCallback.log("浏览器已关闭");
-                    }
-                }
             }
         });
     }

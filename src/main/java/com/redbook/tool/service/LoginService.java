@@ -7,16 +7,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.stereotype.Service;
 
+import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.Cookie;
 import com.microsoft.playwright.options.LoadState;
 import com.redbook.tool.entity.LoginResult;
 import com.redbook.tool.entity.UserInfo;
 import com.redbook.tool.entity.UserInfoResponse;
-import com.redbook.tool.manager.BrowserManager;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -36,7 +38,6 @@ public class LoginService {
     private static final String LOGIN_CONTAINER_SELECTOR = ".login-container";
     private static final long LOGIN_TIMEOUT_MS = 5 * 60 * 1000; // 5分钟
     
-    private final BrowserManager browserManager;
     // 添加UserService依赖
     private final UserService userService;
 
@@ -140,13 +141,6 @@ public class LoginService {
             log.warn("用户信息或cookies为空，无法尝试登录");
             return false;
         }
-        
-        BrowserContext context = null;
-        Page page = null;
-        try {
-            // 创建浏览器上下文并添加cookies
-            context = browserManager.getBrowserContext(BrowserManager.BrowserEnum.CHROMIUM);
-            context.addCookies(user.getCookies());
             
             // 使用原子类来标记状态
             AtomicBoolean loginSuccess = new AtomicBoolean(false);
@@ -154,6 +148,17 @@ public class LoginService {
             
             // 捕获用户信息响应
             UserInfoResponse[] userInfoData = new UserInfoResponse[1];
+        
+        try (Playwright playwright = Playwright.create()) {
+            // 创建浏览器和上下文
+            BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
+                    .setHeadless(true)  // 非无头模式，可以看到界面
+                    .setSlowMo(100);     // 减缓操作速度，便于观察
+                    
+            try (Browser browser = playwright.chromium().launch(launchOptions)) {
+                try (BrowserContext context = browser.newContext()) {
+                    // 添加用户的cookies
+                    context.addCookies(user.getCookies());
             
             // 设置多个路由拦截用户信息API请求 - 使用更广泛的匹配模式
             log.info("设置API请求拦截...");
@@ -225,7 +230,8 @@ public class LoginService {
             
             // 导航到探索页面
             log.info("导航到登录页面...");
-            page = browserManager.newPage(context, LOGIN_URL);
+                    Page page = context.newPage();
+                    page.navigate(LOGIN_URL);
             
             // 等待页面加载完成
             page.waitForLoadState(LoadState.DOMCONTENTLOADED);
@@ -289,17 +295,11 @@ public class LoginService {
             // 登录失败，标记为非活跃
             userService.markUserLoginExpired(user);
             return false;
-            
+                }
+            }
         } catch (PlaywrightException | IOException e) {
             log.error("检查登录状态时发生错误: {}", e.getMessage(), e);
             return false;
-        } finally {
-            // 关闭浏览器
-            if (page != null) {
-                browserManager.closePage(page);
-            } else if (context != null) {
-                browserManager.closeContext(context);
-            }
         }
     }
     
@@ -309,12 +309,17 @@ public class LoginService {
      * @return true 如果登录成功, false 否则
      */
     private boolean scanLogin() {
-        Page page = null;
-        BrowserContext context = null;
-        try {
-            // 1. 使用 BrowserManager 打开登录页面
-            context = browserManager.getBrowserContext(BrowserManager.BrowserEnum.CHROMIUM);
-            page = browserManager.newPage(context, LOGIN_URL);
+        try (Playwright playwright = Playwright.create()) {
+            // 创建浏览器选项
+            BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
+                    .setHeadless(true)  // 非无头模式，可以看到界面
+                    .setSlowMo(100);     // 减缓操作速度，便于观察
+            
+            try (Browser browser = playwright.chromium().launch(launchOptions)) {
+                try (BrowserContext context = browser.newContext()) {
+                    // 1. 打开登录页面
+                    Page page = context.newPage();
+                    page.navigate(LOGIN_URL);
             log.info("小红书登录页面已打开，请在5分钟内扫码登录...");
 
             // 2. 等待登录成功
@@ -359,14 +364,11 @@ public class LoginService {
                 log.warn("登录超时或失败。");
                 return false;
             }
-
+                }
+            }
         } catch (PlaywrightException | IOException e) {
             log.error("登录过程中发生错误: {}", e.getMessage(), e);
             return false;
-        } finally {
-            // 4. 关闭页面和浏览器上下文
-            browserManager.closePage(page); // closePage 会同时关闭 context
-            log.info("浏览器已关闭。");
         }
     }
 
